@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "pocket-guard",
+    "name": "Pocket Guard",
     "slug": "pocket-guard",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "scheme": "pocket-guard",
     "ios": {
       "supportsTablet": true
     },
