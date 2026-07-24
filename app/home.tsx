@@ -100,26 +100,27 @@ export default function Home() {
               </View>
             </View>
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.filterBtn,
-                { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.97 : 1 }] },
-              ]}
-              onPress={() => setShowFilter(true)}
-            >
-              <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-              <Text style={[styles.filterText, { color: colors.text }]}>{filterLabel}</Text>
-              {!isCurrentMonth && filterMonth !== null && (
-                <View style={[styles.filterBadge, { backgroundColor: colors.tint }]}>
-                  <Text style={styles.filterBadgeText}>1</Text>
-                </View>
-              )}
-              <Ionicons name="chevron-down" size={14} color={colors.tabInactive} />
-            </Pressable>
-
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              Transactions
-            </Text>
+            <View style={styles.sectionRow}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                Transactions
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.filterBtn,
+                  { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                ]}
+                onPress={() => setShowFilter(true)}
+              >
+                <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.filterText, { color: colors.text }]}>{filterLabel}</Text>
+                {!isCurrentMonth && filterMonth !== null && (
+                  <View style={[styles.filterBadge, { backgroundColor: colors.tint }]}>
+                    <Text style={styles.filterBadgeText}>1</Text>
+                  </View>
+                )}
+                <Ionicons name="chevron-down" size={12} color={colors.tabInactive} />
+              </Pressable>
+            </View>
           </>
         )}
         renderItem={({ item }: { item: Transaction }) => (
@@ -261,14 +262,11 @@ const styles = StyleSheet.create({
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    alignSelf: 'flex-start',
   },
   filterText: {
     fontSize: 14,
@@ -286,14 +284,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginHorizontal: 16,
-    marginTop: 24,
-    marginBottom: 12,
   },
   txItem: {
     flexDirection: 'row',
