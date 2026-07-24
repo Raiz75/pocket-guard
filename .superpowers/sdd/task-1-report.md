@@ -34,3 +34,9 @@
 ## Issues / concerns
 
 None.
+
+## Fixes applied after review
+- Installed @supabase/supabase-js and @react-native-async-storage/async-storage
+- Fixed created_at/updated_at in insertTransaction to use current timestamp
+- Added guard to getDb() to throw if called before initDatabase()
+- TypeScript check: PASS

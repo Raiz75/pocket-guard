@@ -11,7 +11,7 @@ export async function insertTransaction(tx: Omit<Transaction, 'date'> & { date: 
   const db = getDb()
   await db.runAsync(
     'INSERT INTO transactions (id, user_id, type, amount, category, note, recurring, date, created_at, updated_at, sync_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    tx.id, tx.user_id || null, tx.type, tx.amount, tx.category, tx.note, tx.recurring, tx.date, tx.date, tx.date, 'pending'
+    tx.id, tx.user_id || null, tx.type, tx.amount, tx.category, tx.note, tx.recurring, tx.date, new Date().toISOString(), new Date().toISOString(), 'pending'
   )
 }
 
