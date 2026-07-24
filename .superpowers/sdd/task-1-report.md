@@ -1,31 +1,36 @@
-## Task 1 Implementation Report
+# Task 1 Report: Install Dependencies & Create Database Layer
 
-### What was implemented
-- Initialized Expo project with TypeScript (blank-typescript template)
-- Removed unused App.tsx entry point
-- Installed expo-router and dependencies (expo-linking, expo-constants, react-native-safe-area-context, react-native-screens, expo-system-ui, react-native-gesture-handler, react-native-reanimated)
-- Installed react-native-web, react-dom, @expo/metro-runtime for web support
-- Created constants/Colors.ts with light/dark theme tokens
-- Created app/index.tsx as the home screen with centered "hello am an app" text
-- Updated app.json: displayName "Pocket Guard", userInterfaceStyle "automatic", added scheme
-- Updated index.ts entry point to use expo-router/entry
-- Created components/.gitkeep
+## What was implemented
 
-### What was tested
-- TypeScript check (`npx tsc --noEmit`): PASS (no errors)
-- Web export build (`npx expo export --platform web`): PASS (747 modules bundled)
+- Installed `expo-sqlite` (v~57.0.1) via `npx expo install`
+- Created `db/database.ts` — `initDatabase()` and `getDb()` with `transactions` and `categories` table DDL
+- Created `db/transactions.ts` — `getAllTransactions`, `insertTransaction`, `updateTransaction`, `deleteTransaction`, `getPendingTransactions`, `markTransactionSynced`, `upsertTransaction`
+- Created `db/categories.ts` — `getAllCategories`, `insertCategory`, `getPendingCategories`, `markCategorySynced`, `upsertCategory`
+- Added optional `user_id` field to both `Transaction` and `Category` types in `types/index.ts` (required by DB schema but missing from existing types)
 
-### Files changed
-- app/index.tsx (created)
-- constants/Colors.ts (created)
-- app.json (modified)
-- index.ts (modified)
-- components/.gitkeep (created)
-- App.tsx (deleted)
-- package.json, package-lock.json (modified via installs)
+## What was tested
 
-### Self-review findings
-- TypeScript error in Colors.ts fixed (truncated file, missing closing braces)
-- TypeScript error in app/index.tsx fixed (useColorScheme type refinement)
-- app.json had extra closing brace (fixed)
-- Everything passes clean now
+- `npx tsc --noEmit` — compiled with zero errors
+
+## Files changed
+
+| File | Action |
+|------|--------|
+| `package.json` | Modified — added `expo-sqlite` dependency |
+| `package-lock.json` | Modified — updated by npm |
+| `app.json` | Modified — `expo-sqlite` config plugin auto-added |
+| `db/database.ts` | Created |
+| `db/transactions.ts` | Created |
+| `db/categories.ts` | Created |
+| `types/index.ts` | Modified — added `user_id?: string` to `Transaction` and `Category` |
+
+## Self-review findings
+
+- **Types mismatch**: The brief's code accesses `cat.user_id` and `tx.user_id` but the existing `Category`/`Transaction` types didn't have it. Added as optional fields (`user_id?: string`) to fix without breaking existing callers.
+- **YAGNI check**: No dead code. Every function from the brief is implemented. No extra exports.
+- `insertTransaction` accepts `Omit<Transaction, 'date'> & { date: string }` — this is intentional since the DB stores dates as TEXT and the caller passes a string.
+- `upsert` functions use `any` types — acceptable for sync layer where shape comes from server.
+
+## Issues / concerns
+
+None.

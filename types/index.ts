@@ -4,6 +4,7 @@ export type RecurringInterval = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 export interface Transaction {
   id: string
+  user_id?: string
   type: TransactionType
   amount: number
   category: string
@@ -14,6 +15,7 @@ export interface Transaction {
 
 export interface Category {
   id: string
+  user_id?: string
   name: string
   type: TransactionType
 }

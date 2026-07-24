@@ -4,7 +4,10 @@
     "slug": "pocket-guard",
     "version": "1.0.0",
     "orientation": "portrait",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "pocket-guard",
