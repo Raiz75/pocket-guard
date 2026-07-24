@@ -123,13 +123,31 @@ export default function RecurringScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <Pressable style={styles.backdrop} onPress={() => setEditTx(null)} />
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
-            <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Recurring</Text>
-              <Pressable onPress={() => editTx && handleDelete(editTx.id)}>
-                <Ionicons name="trash-outline" size={22} color={colors.expense} />
+            <View style={styles.editBtnRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.editOverlapBtn,
+                  { backgroundColor: canSave ? colors.tint : colors.border, opacity: canSave ? 1 : 0.6 },
+                  { transform: [{ scale: pressed && canSave ? 0.93 : 1 }] },
+                ]}
+                onPress={handleUpdate}
+                disabled={!canSave}
+              >
+                <Ionicons name="checkmark" size={22} color="#FFF" />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.editOverlapBtn,
+                  { backgroundColor: colors.expense, transform: [{ scale: pressed ? 0.93 : 1 }] },
+                ]}
+                onPress={() => editTx && handleDelete(editTx.id)}
+              >
+                <Ionicons name="trash-outline" size={20} color="#FFF" />
               </Pressable>
             </View>
+
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Recurring</Text>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={[styles.segment, { backgroundColor: colors.background }]}>
@@ -201,18 +219,6 @@ export default function RecurringScreen() {
                   </Pressable>
                 ))}
               </View>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.saveBtn,
-                  { backgroundColor: canSave ? colors.tint : colors.border, opacity: canSave ? 1 : 0.6 },
-                  { transform: [{ scale: pressed && canSave ? 0.97 : 1 }] },
-                ]}
-                onPress={handleUpdate}
-                disabled={!canSave}
-              >
-                <Text style={[styles.saveText, { color: canSave ? '#FFF' : colors.textSecondary }]}>Save Changes</Text>
-              </Pressable>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -400,15 +406,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  saveBtn: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 8,
+  editBtnRow: {
+    position: 'absolute',
+    top: -24,
+    right: 24,
+    flexDirection: 'row',
+    gap: 8,
+    zIndex: 10,
   },
-  saveText: {
-    fontSize: 17,
-    fontWeight: '700',
+  editOverlapBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   dropOverlay: {
     flex: 1,
