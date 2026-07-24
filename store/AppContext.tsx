@@ -9,12 +9,26 @@ interface AppState {
 
 type Action =
   | { type: 'ADD_TRANSACTION'; payload: Transaction }
+  | { type: 'UPDATE_TRANSACTION'; payload: Transaction }
+  | { type: 'DELETE_TRANSACTION'; payload: string }
   | { type: 'ADD_CATEGORY'; payload: Category }
 
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'ADD_TRANSACTION':
       return { ...state, transactions: [action.payload, ...state.transactions] }
+    case 'UPDATE_TRANSACTION':
+      return {
+        ...state,
+        transactions: state.transactions.map((t) =>
+          t.id === action.payload.id ? action.payload : t
+        ),
+      }
+    case 'DELETE_TRANSACTION':
+      return {
+        ...state,
+        transactions: state.transactions.filter((t) => t.id !== action.payload),
+      }
     case 'ADD_CATEGORY':
       return { ...state, categories: [...state.categories, action.payload] }
     default:
@@ -48,20 +62,6 @@ export function useApp() {
 
   const { state, dispatch } = ctx
 
-  const monthlyTransactions = state.transactions.filter((t) => {
-    const now = new Date()
-    const d = new Date(t.date)
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  })
-
-  const monthlyIncome = monthlyTransactions
-    .filter((t) => t.type === 'inflow')
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const monthlyExpenses = monthlyTransactions
-    .filter((t) => t.type === 'outflow')
-    .reduce((sum, t) => sum + t.amount, 0)
-
   const balance = state.transactions.reduce((sum, t) => {
     return t.type === 'inflow' ? sum + t.amount : sum - t.amount
   }, 0)
@@ -73,6 +73,14 @@ export function useApp() {
     })
   }
 
+  const updateTransaction = (t: Transaction) => {
+    dispatch({ type: 'UPDATE_TRANSACTION', payload: t })
+  }
+
+  const deleteTransaction = (id: string) => {
+    dispatch({ type: 'DELETE_TRANSACTION', payload: id })
+  }
+
   const addCategory = (c: Category) => {
     dispatch({ type: 'ADD_CATEGORY', payload: c })
   }
@@ -81,9 +89,9 @@ export function useApp() {
     transactions: state.transactions,
     categories: state.categories,
     balance,
-    monthlyIncome,
-    monthlyExpenses,
     addTransaction,
+    updateTransaction,
+    deleteTransaction,
     addCategory,
   }
 }

@@ -1,5 +1,7 @@
 export type TransactionType = 'inflow' | 'outflow'
 
+export type RecurringInterval = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
 export interface Transaction {
   id: string
   type: TransactionType
@@ -7,6 +9,7 @@ export interface Transaction {
   category: string
   note: string
   date: Date
+  recurring: RecurringInterval | null
 }
 
 export interface Category {

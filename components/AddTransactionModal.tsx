@@ -1,22 +1,29 @@
 import { useState } from 'react'
 import {
   Modal, View, Text, TextInput, Pressable, FlatList,
-  StyleSheet, useColorScheme, KeyboardAvoidingView, Platform,
+  StyleSheet, useColorScheme, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS,
 } from 'react-native-reanimated'
 import { Colors } from '../constants/Colors'
-import { TransactionType, Category } from '../types'
+import { TransactionType, Category, RecurringInterval } from '../types'
 
 const SNAP_THRESHOLD = 120
 const VELOCITY_THRESHOLD = 300
 
+const INTERVALS: { label: string; value: RecurringInterval }[] = [
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Yearly', value: 'yearly' },
+]
+
 interface Props {
   visible: boolean
   onClose: () => void
-  onSave: (data: { type: TransactionType; amount: number; category: string; note: string }) => void
+  onSave: (data: { type: TransactionType; amount: number; category: string; note: string; recurring: RecurringInterval | null }) => void
   categories: Category[]
 }
 
@@ -73,25 +80,28 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
   const [note, setNote] = useState('')
+  const [recurring, setRecurring] = useState<RecurringInterval | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showRecurringDropdown, setShowRecurringDropdown] = useState(false)
 
   const filteredCategories = categories.filter((c) => c.type === type)
 
   const handleSave = () => {
     const parsed = parseFloat(amount)
     if (!parsed || parsed <= 0 || !category) return
-    onSave({ type, amount: parsed, category, note })
+    onSave({ type, amount: parsed, category, note, recurring })
     setAmount('')
     setCategory('')
     setNote('')
     setType('outflow')
+    setRecurring(null)
     onClose()
   }
 
   const canSave = parseFloat(amount) > 0 && category.length > 0
 
   const content = (
-    <>
+    <ScrollView showsVerticalScrollIndicator={false}>
       <View style={[styles.handle, { backgroundColor: colors.border }]} />
       <Text style={[styles.title, { color: colors.text }]}>New Transaction</Text>
 
@@ -148,6 +158,31 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
         onChangeText={setNote}
       />
 
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Recurring</Text>
+      <View style={[styles.segmentSm, { backgroundColor: colors.background }]}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.segmentBtnSm,
+            !recurring && { backgroundColor: colors.tint },
+            { transform: [{ scale: pressed ? 0.95 : 1 }] },
+          ]}
+          onPress={() => setRecurring(null)}
+        >
+          <Text style={[styles.segmentTextSm, { color: !recurring ? '#FFF' : colors.textSecondary }]}>None</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.segmentBtnSm,
+            { transform: [{ scale: pressed ? 0.95 : 1 }] },
+          ]}
+          onPress={() => setShowRecurringDropdown(true)}
+        >
+          <Text style={[styles.segmentTextSm, { color: recurring ? colors.tint : colors.textSecondary }]}>
+            {recurring ? recurring.charAt(0).toUpperCase() + recurring.slice(1) : 'Set interval'}
+          </Text>
+        </Pressable>
+      </View>
+
       <Pressable
         style={({ pressed }) => [
           styles.saveBtn,
@@ -159,7 +194,7 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
       >
         <Text style={[styles.saveText, { color: canSave ? '#FFF' : colors.textSecondary }]}>Add Transaction</Text>
       </Pressable>
-    </>
+    </ScrollView>
   )
 
   return (
@@ -194,6 +229,31 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
           </View>
         </Pressable>
       </Modal>
+
+      <Modal visible={showRecurringDropdown} transparent animationType="fade">
+        <Pressable style={styles.dropOverlay} onPress={() => setShowRecurringDropdown(false)}>
+          <View style={[styles.dropList, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.dropTitle, { color: colors.text }]}>Recurring Interval</Text>
+            {INTERVALS.map((item) => (
+              <Pressable
+                key={item.value}
+                style={({ pressed }) => [
+                  styles.dropItem,
+                  { backgroundColor: pressed ? colors.background : 'transparent' },
+                ]}
+                onPress={() => { setRecurring(item.value); setShowRecurringDropdown(false) }}
+              >
+                <Text style={[styles.dropItemText, { color: colors.text, fontWeight: recurring === item.value ? '700' : '500' }]}>
+                  {item.label}
+                </Text>
+                {recurring === item.value && (
+                  <Text style={{ color: colors.tint, fontSize: 14 }}>✓</Text>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </>
   )
 }
@@ -210,6 +270,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheet: {
+    maxHeight: '85%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -242,6 +303,23 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 15,
+    fontWeight: '600',
+  },
+  segmentSm: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+    gap: 4,
+  },
+  segmentBtnSm: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  segmentTextSm: {
+    fontSize: 14,
     fontWeight: '600',
   },
   label: {
@@ -294,6 +372,9 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   dropItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 20,
   },

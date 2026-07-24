@@ -38,6 +38,13 @@ export default function RootLayout() {
             }}
           />
           <Drawer.Screen
+            name="recurring"
+            options={{
+              title: 'Recurring',
+              drawerIcon: ({ color, size }) => <Ionicons name="repeat-outline" size={size} color={color} />,
+            }}
+          />
+          <Drawer.Screen
             name="category"
             options={{
               title: 'Category',
