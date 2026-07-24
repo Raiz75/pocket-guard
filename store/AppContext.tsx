@@ -4,6 +4,7 @@ import { initDatabase } from '../db/database'
 import { getAllTransactions, insertTransaction, updateTransaction, deleteTransaction } from '../db/transactions'
 import { getAllCategories, insertCategory } from '../db/categories'
 import { syncAll } from '../lib/sync'
+import { subscribeToChanges, unsubscribe } from '../lib/realtime'
 import { useAuth } from './AuthContext'
 import { DEFAULT_CATEGORIES } from '../constants/Categories'
 
@@ -45,6 +46,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadData().finally(() => setLoading(false))
   }, [loadData])
 
+  const refresh = useCallback(async () => {
+    const [txs, cats] = await Promise.all([getAllTransactions(), getAllCategories()])
+    setTransactions(txs)
+    setCategories(cats)
+  }, [])
+
+  useEffect(() => {
+    if (user?.id) {
+      subscribeToChanges(user.id, refresh)
+    }
+    return () => unsubscribe()
+  }, [user?.id, refresh])
+
   const addTransactionFn = useCallback(async (t: Omit<Transaction, 'id' | 'date'>) => {
     const id = Date.now().toString()
     const dateStr = new Date().toISOString()
@@ -80,12 +94,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       syncAll(user.id).catch(() => {})
     }
   }, [user])
-
-  const refresh = useCallback(async () => {
-    const [txs, cats] = await Promise.all([getAllTransactions(), getAllCategories()])
-    setTransactions(txs)
-    setCategories(cats)
-  }, [])
 
   const balance = transactions.reduce((sum, t) => {
     return t.type === 'inflow' ? sum + t.amount : sum - t.amount
