@@ -16,12 +16,17 @@ export async function insertCategory(cat: Category): Promise<void> {
 
 export async function getPendingCategories(): Promise<any[]> {
   const db = getDb()
-  return db.getAllAsync("SELECT * FROM categories WHERE sync_status='pending'")
+  return db.getAllAsync("SELECT * FROM categories WHERE sync_status IN ('pending','deleted')")
 }
 
 export async function markCategorySynced(id: string): Promise<void> {
   const db = getDb()
   await db.runAsync("UPDATE categories SET sync_status='synced' WHERE id=?", id)
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const db = getDb()
+  await db.runAsync("UPDATE categories SET sync_status='deleted' WHERE id=?", id)
 }
 
 export async function upsertCategory(cat: any): Promise<void> {

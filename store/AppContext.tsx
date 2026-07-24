@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { Transaction, Category } from '../types'
 import { initDatabase } from '../db/database'
 import { getAllTransactions, insertTransaction, updateTransaction, deleteTransaction } from '../db/transactions'
@@ -27,6 +27,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const prevUserId = useRef(user?.id)
 
   const loadData = useCallback(async () => {
     await initDatabase()
@@ -51,6 +52,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTransactions(txs)
     setCategories(cats)
   }, [])
+
+  useEffect(() => {
+    const prev = prevUserId.current
+    prevUserId.current = user?.id
+    if (user?.id && !prev) {
+      syncAll(user.id).then(() => refresh()).catch(() => {})
+    }
+  }, [user?.id, refresh])
 
   useEffect(() => {
     if (user?.id) {

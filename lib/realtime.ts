@@ -22,7 +22,12 @@ export function subscribeToChanges(userId: string, refresh: () => Promise<void>)
   const catChannel = supabase
     .channel('categories-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter: `user_id=eq.${userId}` }, async (payload) => {
-      await upsertCategory(payload.new)
+      if (payload.eventType === 'DELETE') {
+        const { deleteCategory } = await import('../db/categories')
+        await deleteCategory(payload.old.id)
+      } else {
+        await upsertCategory(payload.new)
+      }
       await refresh()
     })
     .subscribe()

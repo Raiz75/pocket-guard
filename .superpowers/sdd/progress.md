@@ -3,3 +3,4 @@ Task 1 (persistence): complete (commits 3674576..393605d, review clean)
 Task 2: complete
 Task 2: complete (commits 393605d..680e79c, review clean)
 Task 3: complete (commits 680e79c..662746a, review clean)
+Task 4: complete (commits 662746a..4f3bf80, review clean)
