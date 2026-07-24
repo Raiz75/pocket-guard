@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import {
   StyleSheet, Text, View, Pressable,
-  Modal, TextInput, Alert, useColorScheme,
-  KeyboardAvoidingView, Platform, ScrollView,
+  useColorScheme, ScrollView,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '../constants/Colors'
 import { useApp } from '../store/AppContext'
-import { TransactionType, Category } from '../types'
+import AddCategoryModal from '../components/AddCategoryModal'
+import { Category } from '../types'
 
 function CategoryCard({ item, colors }: { item: Category; colors: any }) {
   return (
@@ -30,24 +30,10 @@ export default function CategoryScreen() {
   const colors = Colors[theme]
   const { categories, addCategory } = useApp()
   const [showModal, setShowModal] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState<TransactionType>('outflow')
 
   const incomeCategories = categories.filter((c) => c.type === 'inflow')
   const expenseCategories = categories.filter((c) => c.type === 'outflow')
-
-  const handleAdd = () => {
-    const trimmed = newName.trim()
-    if (!trimmed) return
-    const exists = categories.some((c) => c.name.toLowerCase() === trimmed.toLowerCase() && c.type === newType)
-    if (exists) {
-      Alert.alert('Duplicate', 'A category with this name already exists.')
-      return
-    }
-    addCategory({ id: Date.now().toString(), name: trimmed, type: newType })
-    setNewName('')
-    setShowModal(false)
-  }
+  const allNames = categories.map((c) => c.name)
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -79,70 +65,12 @@ export default function CategoryScreen() {
         <Ionicons name="add" size={28} color="#FFF" />
       </Pressable>
 
-      <Modal visible={showModal} animationType="slide" transparent>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
-          <Pressable style={styles.backdrop} onPress={() => setShowModal(false)} />
-          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
-            <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Add Category</Text>
-
-            <View style={[styles.segment, { backgroundColor: colors.background }]}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.segmentBtn,
-                  newType === 'inflow' && { backgroundColor: colors.income },
-                  { transform: [{ scale: pressed ? 0.95 : 1 }] },
-                ]}
-                onPress={() => setNewType('inflow')}
-              >
-                <Text style={[styles.segmentText, { color: newType === 'inflow' ? '#FFF' : colors.textSecondary }]}>Income</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.segmentBtn,
-                  newType === 'outflow' && { backgroundColor: colors.expense },
-                  { transform: [{ scale: pressed ? 0.95 : 1 }] },
-                ]}
-                onPress={() => setNewType('outflow')}
-              >
-                <Text style={[styles.segmentText, { color: newType === 'outflow' ? '#FFF' : colors.textSecondary }]}>Expense</Text>
-              </Pressable>
-            </View>
-
-            <TextInput
-              style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-              placeholder="Category name"
-              placeholderTextColor={colors.tabInactive}
-              value={newName}
-              onChangeText={setNewName}
-              autoFocus
-            />
-
-            <View style={styles.modalActions}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionBtn,
-                  { backgroundColor: colors.border, transform: [{ scale: pressed ? 0.97 : 1 }] },
-                ]}
-                onPress={() => setShowModal(false)}
-              >
-                <Text style={[styles.actionText, { color: colors.textSecondary }]}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionBtn,
-                  { backgroundColor: newName.trim() ? colors.tint : colors.border, opacity: newName.trim() ? 1 : 0.6 },
-                  { transform: [{ scale: pressed && newName.trim() ? 0.97 : 1 }] },
-                ]}
-                onPress={handleAdd}
-                disabled={!newName.trim()}
-              >
-                <Text style={[styles.actionText, { color: '#FFF' }]}>Add</Text>
-              </Pressable>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      <AddCategoryModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={(name, type) => addCategory({ id: Date.now().toString(), name, type })}
+        existingNames={allNames}
+      />
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -202,68 +130,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    flex: 1,
-  },
-  sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 24,
-  },
-  segment: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
-    gap: 4,
-  },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  segmentText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionBtn: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: '700',
   },
 })
