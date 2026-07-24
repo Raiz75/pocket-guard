@@ -26,6 +26,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [dbReady, setDbReady] = useState(false)
   const { user } = useAuth()
   const prevUserId = useRef(user?.id)
 
@@ -38,7 +39,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    loadData().finally(() => setLoading(false))
+    loadData().finally(() => {
+      setLoading(false)
+      setDbReady(true)
+    })
   }, [loadData])
 
   const refresh = useCallback(async () => {
@@ -48,12 +52,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    if (!dbReady) return
     const prev = prevUserId.current
     prevUserId.current = user?.id
     if (user?.id && !prev) {
       syncAll(user.id).then(() => refresh()).catch(() => {})
     }
-  }, [user?.id, refresh])
+  }, [user?.id, refresh, dbReady])
 
   useEffect(() => {
     if (user?.id) {
