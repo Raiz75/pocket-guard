@@ -2,6 +2,7 @@ import Drawer from 'expo-router/drawer'
 import { useColorScheme } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { AuthProvider } from '../store/AuthContext'
 import { AppProvider } from '../store/AppContext'
 import { Colors } from '../constants/Colors'
 
@@ -12,6 +13,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
       <AppProvider>
         <Drawer
           screenOptions={{
@@ -52,6 +54,10 @@ export default function RootLayout() {
             }}
           />
           <Drawer.Screen
+            name="auth"
+            options={{ drawerItemStyle: { display: 'none' }, headerShown: false }}
+          />
+          <Drawer.Screen
             name="profile"
             options={{
               title: 'Profile',
@@ -60,6 +66,7 @@ export default function RootLayout() {
           />
         </Drawer>
       </AppProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   )
 }
