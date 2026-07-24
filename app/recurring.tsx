@@ -45,7 +45,7 @@ export default function RecurringScreen() {
   const handleUpdate = () => {
     if (!editTx) return
     const parsed = parseFloat(editAmount)
-    if (!parsed || parsed <= 0 || !editCategory || !editRecurring) return
+    if (!parsed || parsed <= 0 || !editCategory) return
     updateTransaction({
       ...editTx,
       type: editType,
@@ -64,7 +64,7 @@ export default function RecurringScreen() {
     ])
   }
 
-  const canSave = parseFloat(editAmount) > 0 && editCategory.length > 0 && editRecurring !== null
+  const canSave = parseFloat(editAmount) > 0 && editCategory.length > 0
 
   const renderItem = ({ item }: { item: Transaction }) => (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -203,6 +203,16 @@ export default function RecurringScreen() {
 
               <Text style={[styles.label, { color: colors.textSecondary }]}>Interval</Text>
               <View style={[styles.intervalRow, { backgroundColor: colors.background }]}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.intervalBtn,
+                    editRecurring === null && { backgroundColor: colors.tint },
+                    { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                  ]}
+                  onPress={() => setEditRecurring(null)}
+                >
+                  <Text style={[styles.intervalBtnText, { color: editRecurring === null ? '#FFF' : colors.textSecondary }]}>None</Text>
+                </Pressable>
                 {(['daily', 'weekly', 'monthly', 'yearly'] as RecurringInterval[]).map((iv) => (
                   <Pressable
                     key={iv}
