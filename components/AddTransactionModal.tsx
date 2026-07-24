@@ -7,6 +7,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS,
 } from 'react-native-reanimated'
+import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '../constants/Colors'
 import { TransactionType, Category, RecurringInterval } from '../types'
 
@@ -100,8 +101,8 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
 
   const canSave = parseFloat(amount) > 0 && category.length > 0
 
-  const content = (
-    <ScrollView showsVerticalScrollIndicator={false}>
+  const formFields = (
+    <>
       <View style={[styles.handle, { backgroundColor: colors.border }]} />
       <Text style={[styles.title, { color: colors.text }]}>New Transaction</Text>
 
@@ -182,19 +183,7 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
           </Text>
         </Pressable>
       </View>
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.saveBtn,
-          { backgroundColor: canSave ? colors.tint : colors.border, opacity: canSave ? 1 : 0.7 },
-          { transform: [{ scale: pressed && canSave ? 0.97 : 1 }] },
-        ]}
-        onPress={handleSave}
-        disabled={!canSave}
-      >
-        <Text style={[styles.saveText, { color: canSave ? '#FFF' : colors.textSecondary }]}>Add Transaction</Text>
-      </Pressable>
-    </ScrollView>
+    </>
   )
 
   return (
@@ -202,7 +191,21 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
       <Modal visible={visible} animationType="none" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
           <AnimatedSheet colors={colors} onClose={onClose}>
-            {content}
+            <View style={styles.sheetContent}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.overlapBtn,
+                  { backgroundColor: canSave ? colors.tint : colors.border, transform: [{ scale: pressed && canSave ? 0.93 : 1 }], opacity: canSave ? 1 : 0.6 },
+                ]}
+                onPress={handleSave}
+                disabled={!canSave}
+              >
+                <Ionicons name="checkmark" size={24} color="#FFF" />
+              </Pressable>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {formFields}
+              </ScrollView>
+            </View>
           </AnimatedSheet>
         </KeyboardAvoidingView>
       </Modal>
@@ -341,15 +344,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  saveBtn: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveText: {
-    fontSize: 17,
-    fontWeight: '700',
+  sheetContent: {
+    position: 'relative',
   },
   dropOverlay: {
     flex: 1,
@@ -377,6 +373,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 20,
+  },
+  overlapBtn: {
+    position: 'absolute',
+    top: -28,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    zIndex: 10,
   },
   dropItemText: {
     fontSize: 16,
