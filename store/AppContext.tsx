@@ -1,56 +1,108 @@
-import { createContext, useContext, useReducer, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { Transaction, Category } from '../types'
+import { initDatabase } from '../db/database'
+import { getAllTransactions, insertTransaction, updateTransaction, deleteTransaction } from '../db/transactions'
+import { getAllCategories, insertCategory } from '../db/categories'
+import { syncAll } from '../lib/sync'
+import { useAuth } from './AuthContext'
 import { DEFAULT_CATEGORIES } from '../constants/Categories'
 
-interface AppState {
+interface AppContextValue {
   transactions: Transaction[]
   categories: Category[]
-}
-
-type Action =
-  | { type: 'ADD_TRANSACTION'; payload: Transaction }
-  | { type: 'UPDATE_TRANSACTION'; payload: Transaction }
-  | { type: 'DELETE_TRANSACTION'; payload: string }
-  | { type: 'ADD_CATEGORY'; payload: Category }
-
-function appReducer(state: AppState, action: Action): AppState {
-  switch (action.type) {
-    case 'ADD_TRANSACTION':
-      return { ...state, transactions: [action.payload, ...state.transactions] }
-    case 'UPDATE_TRANSACTION':
-      return {
-        ...state,
-        transactions: state.transactions.map((t) =>
-          t.id === action.payload.id ? action.payload : t
-        ),
-      }
-    case 'DELETE_TRANSACTION':
-      return {
-        ...state,
-        transactions: state.transactions.filter((t) => t.id !== action.payload),
-      }
-    case 'ADD_CATEGORY':
-      return { ...state, categories: [...state.categories, action.payload] }
-    default:
-      return state
-  }
-}
-
-interface AppContextValue {
-  state: AppState
-  dispatch: React.Dispatch<Action>
+  balance: number
+  loading: boolean
+  addTransaction: (t: Omit<Transaction, 'id' | 'date'>) => void
+  updateTransaction: (t: Transaction) => void
+  deleteTransaction: (id: string) => void
+  addCategory: (c: Category) => void
+  refresh: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, {
-    transactions: [],
-    categories: DEFAULT_CATEGORIES,
-  })
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+
+  const loadData = useCallback(async () => {
+    await initDatabase()
+    const [txs, cats] = await Promise.all([getAllTransactions(), getAllCategories()])
+    setTransactions(txs)
+    if (cats.length === 0) {
+      for (const cat of DEFAULT_CATEGORIES) {
+        await insertCategory(cat)
+      }
+      setCategories(DEFAULT_CATEGORIES)
+    } else {
+      setCategories(cats)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData().finally(() => setLoading(false))
+  }, [loadData])
+
+  const addTransactionFn = useCallback(async (t: Omit<Transaction, 'id' | 'date'>) => {
+    const id = Date.now().toString()
+    const dateStr = new Date().toISOString()
+    const tx = { ...t, id, date: dateStr }
+    await insertTransaction(tx as any)
+    const newTx: Transaction = { ...t, id, date: new Date(dateStr) }
+    setTransactions((prev) => [newTx, ...prev])
+    if (user?.id) {
+      syncAll(user.id).catch(() => {})
+    }
+  }, [user])
+
+  const updateTransactionFn = useCallback(async (t: Transaction) => {
+    await updateTransaction(t)
+    setTransactions((prev) => prev.map((tx) => (tx.id === t.id ? t : tx)))
+    if (user?.id) {
+      syncAll(user.id).catch(() => {})
+    }
+  }, [user])
+
+  const deleteTransactionFn = useCallback(async (id: string) => {
+    await deleteTransaction(id)
+    setTransactions((prev) => prev.filter((tx) => tx.id !== id))
+    if (user?.id) {
+      syncAll(user.id).catch(() => {})
+    }
+  }, [user])
+
+  const addCategoryFn = useCallback(async (c: Category) => {
+    await insertCategory(c)
+    setCategories((prev) => [...prev, c])
+    if (user?.id) {
+      syncAll(user.id).catch(() => {})
+    }
+  }, [user])
+
+  const refresh = useCallback(async () => {
+    const [txs, cats] = await Promise.all([getAllTransactions(), getAllCategories()])
+    setTransactions(txs)
+    setCategories(cats)
+  }, [])
+
+  const balance = transactions.reduce((sum, t) => {
+    return t.type === 'inflow' ? sum + t.amount : sum - t.amount
+  }, 0)
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{
+      transactions,
+      categories,
+      balance,
+      loading,
+      addTransaction: addTransactionFn,
+      updateTransaction: updateTransactionFn,
+      deleteTransaction: deleteTransactionFn,
+      addCategory: addCategoryFn,
+      refresh,
+    }}>
       {children}
     </AppContext.Provider>
   )
@@ -59,39 +111,5 @@ export function AppProvider({ children }: { children: ReactNode }) {
 export function useApp() {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useApp must be used within AppProvider')
-
-  const { state, dispatch } = ctx
-
-  const balance = state.transactions.reduce((sum, t) => {
-    return t.type === 'inflow' ? sum + t.amount : sum - t.amount
-  }, 0)
-
-  const addTransaction = (t: Omit<Transaction, 'id' | 'date'>) => {
-    dispatch({
-      type: 'ADD_TRANSACTION',
-      payload: { ...t, id: Date.now().toString(), date: new Date() },
-    })
-  }
-
-  const updateTransaction = (t: Transaction) => {
-    dispatch({ type: 'UPDATE_TRANSACTION', payload: t })
-  }
-
-  const deleteTransaction = (id: string) => {
-    dispatch({ type: 'DELETE_TRANSACTION', payload: id })
-  }
-
-  const addCategory = (c: Category) => {
-    dispatch({ type: 'ADD_CATEGORY', payload: c })
-  }
-
-  return {
-    transactions: state.transactions,
-    categories: state.categories,
-    balance,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addCategory,
-  }
+  return ctx
 }

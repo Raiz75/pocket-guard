@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import {
   StyleSheet, Text, View, FlatList, Pressable, Modal, TextInput,
   Alert, useColorScheme, KeyboardAvoidingView, Platform, ScrollView,
+  RefreshControl,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '../constants/Colors'
 import { useApp } from '../store/AppContext'
+import { useAuth } from '../store/AuthContext'
+import { syncAll } from '../lib/sync'
 import AddTransactionModal from '../components/AddTransactionModal'
 import EditTransactionModal from '../components/EditTransactionModal'
 import { Transaction } from '../types'
@@ -37,7 +40,21 @@ export default function Home() {
   const colorScheme = useColorScheme()
   const theme: 'light' | 'dark' = colorScheme === 'dark' ? 'dark' : 'light'
   const colors = Colors[theme]
-  const { transactions, balance, addTransaction, updateTransaction, deleteTransaction, categories } = useApp()
+  const { transactions, balance, addTransaction, updateTransaction, deleteTransaction, categories, refresh } = useApp()
+  const { user } = useAuth()
+  const [refreshing, setRefreshing] = useState(false)
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      if (user) {
+        await syncAll(user.id)
+      }
+      await refresh()
+    } finally {
+      setRefreshing(false)
+    }
+  }, [user, refresh])
   const [modalVisible, setModalVisible] = useState(false)
   const [editTx, setEditTx] = useState<Transaction | null>(null)
   const [showFilter, setShowFilter] = useState(false)
@@ -77,6 +94,7 @@ export default function Home() {
         data={filteredTransactions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={() => (
           <>
             <View style={[styles.balanceCard, { backgroundColor: colors.tint }]}>
