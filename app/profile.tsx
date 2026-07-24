@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, TextInput, useColorScheme } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Colors } from '../../constants/Colors'
+import { Colors } from '../constants/Colors'
 
 export default function Profile() {
   const colorScheme = useColorScheme()
@@ -9,8 +9,6 @@ export default function Profile() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.avatarRow}>
           <View style={[styles.avatar, { backgroundColor: colors.tint }]}>
@@ -26,7 +24,7 @@ export default function Profile() {
       <View style={[styles.fieldCard, { backgroundColor: colors.surface }]}>
         <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Name</Text>
         <TextInput
-          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+          style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
           placeholder="Your name"
           placeholderTextColor={colors.tabInactive}
         />
@@ -35,7 +33,7 @@ export default function Profile() {
       <View style={[styles.fieldCard, { backgroundColor: colors.surface }]}>
         <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Email</Text>
         <TextInput
-          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+          style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
           placeholder="your@email.com"
           placeholderTextColor={colors.tabInactive}
           keyboardType="email-address"
@@ -49,14 +47,8 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    marginTop: 60,
-    marginBottom: 24,
+    padding: 16,
+    paddingTop: 16,
   },
   card: {
     borderRadius: 20,

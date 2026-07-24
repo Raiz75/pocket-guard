@@ -1,35 +1,77 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  StyleSheet, Text, View, FlatList, Pressable, useColorScheme,
+  StyleSheet, Text, View, FlatList, Pressable, Modal, useColorScheme,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Colors } from '../../constants/Colors'
-import { useApp } from '../../store/AppContext'
-import AddTransactionModal from '../../components/AddTransactionModal'
-import { Transaction } from '../../types'
+import { Colors } from '../constants/Colors'
+import { useApp } from '../store/AppContext'
+import AddTransactionModal from '../components/AddTransactionModal'
+import { Transaction } from '../types'
+
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 function formatDate(d: Date) {
   const date = new Date(d)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+  return `${monthNames[date.getMonth()].slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`
 }
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+function getMonthOptions() {
+  const now = new Date()
+  const options: { month: number | null; year: number; label: string }[] = [
+    { month: null, year: now.getFullYear(), label: 'All Months' },
+  ]
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const m = d.getMonth()
+    const y = d.getFullYear()
+    if (!options.some((o) => o.month === m && o.year === y)) {
+      options.push({ month: m, year: y, label: `${monthNames[m]} ${y}` })
+    }
+  }
+  return options
+}
 
 export default function Home() {
   const colorScheme = useColorScheme()
   const theme: 'light' | 'dark' = colorScheme === 'dark' ? 'dark' : 'light'
   const colors = Colors[theme]
-  const { transactions, balance, monthlyIncome, monthlyExpenses, addTransaction, categories } = useApp()
+  const { transactions, balance, addTransaction, categories } = useApp()
   const [modalVisible, setModalVisible] = useState(false)
+  const [showFilter, setShowFilter] = useState(false)
+  const [filterMonth, setFilterMonth] = useState<number | null>(new Date().getMonth())
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear())
+
+  const monthOptions = useMemo(getMonthOptions, [])
+
+  const filteredTransactions = useMemo(() => {
+    if (filterMonth === null) return transactions
+    return transactions.filter((t) => {
+      const d = new Date(t.date)
+      return d.getMonth() === filterMonth && d.getFullYear() === filterYear
+    })
+  }, [transactions, filterMonth, filterYear])
+
+  const filteredIncome = filteredTransactions
+    .filter((t) => t.type === 'inflow')
+    .reduce((s, t) => s + t.amount, 0)
+
+  const filteredExpenses = filteredTransactions
+    .filter((t) => t.type === 'outflow')
+    .reduce((s, t) => s + t.amount, 0)
+
+  const filterLabel = filterMonth === null
+    ? 'All Months'
+    : `${monthNames[filterMonth].slice(0, 3)} ${filterYear}`
 
   const now = new Date()
-  const monthLabel = monthNames[now.getMonth()]
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  const isCurrentMonth = filterMonth === currentMonth && filterYear === currentYear
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={transactions}
+        data={filteredTransactions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListHeaderComponent={() => (
@@ -41,25 +83,42 @@ export default function Home() {
               </Text>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
-                  <Ionicons name="arrow-down" size={14} color="rgba(255,255,255,0.8)" />
+                  <Ionicons name="arrow-up" size={14} color="rgba(255,255,255,0.8)" />
                   <Text style={styles.summaryValue}>
-                    ₱{monthlyIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₱{filteredIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                   <Text style={styles.summaryLabel}>Income</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                  <Ionicons name="arrow-up" size={14} color="rgba(255,255,255,0.8)" />
+                  <Ionicons name="arrow-down" size={14} color="rgba(255,255,255,0.8)" />
                   <Text style={styles.summaryValue}>
-                    ₱{monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₱{filteredExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                   <Text style={styles.summaryLabel}>Expenses</Text>
                 </View>
               </View>
             </View>
 
+            <Pressable
+              style={({ pressed }) => [
+                styles.filterBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.97 : 1 }] },
+              ]}
+              onPress={() => setShowFilter(true)}
+            >
+              <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+              <Text style={[styles.filterText, { color: colors.text }]}>{filterLabel}</Text>
+              {!isCurrentMonth && filterMonth !== null && (
+                <View style={[styles.filterBadge, { backgroundColor: colors.tint }]}>
+                  <Text style={styles.filterBadgeText}>1</Text>
+                </View>
+              )}
+              <Ionicons name="chevron-down" size={14} color={colors.tabInactive} />
+            </Pressable>
+
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              {monthLabel} Transactions
+              Transactions
             </Text>
           </>
         )}
@@ -68,7 +127,7 @@ export default function Home() {
             <View style={styles.txLeft}>
               <View style={[styles.txIcon, { backgroundColor: item.type === 'inflow' ? colors.income + '20' : colors.expense + '20' }]}>
                 <Ionicons
-                  name={item.type === 'inflow' ? 'trending-down' : 'trending-up'}
+                  name={item.type === 'inflow' ? 'trending-up' : 'trending-down'}
                   size={18}
                   color={item.type === 'inflow' ? colors.income : colors.expense}
                 />
@@ -111,6 +170,36 @@ export default function Home() {
         onSave={(data) => addTransaction(data)}
         categories={categories}
       />
+
+      <Modal visible={showFilter} transparent animationType="fade">
+        <Pressable style={styles.filterOverlay} onPress={() => setShowFilter(false)}>
+          <View style={[styles.filterSheet, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.filterSheetTitle, { color: colors.text }]}>Select Month</Text>
+            {monthOptions.map((opt) => {
+              const active = opt.month === filterMonth && opt.year === filterYear
+              return (
+                <Pressable
+                  key={opt.label}
+                  style={({ pressed }) => [
+                    styles.filterOption,
+                    { backgroundColor: pressed ? colors.background : 'transparent' },
+                  ]}
+                  onPress={() => {
+                    setFilterMonth(opt.month)
+                    setFilterYear(opt.year)
+                    setShowFilter(false)
+                  }}
+                >
+                  <Text style={[styles.filterOptionText, { color: active ? colors.tint : colors.text, fontWeight: active ? '700' : '500' }]}>
+                    {opt.label}
+                  </Text>
+                  {active && <Ionicons name="checkmark" size={20} color={colors.tint} />}
+                </Pressable>
+              )
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   )
 }
@@ -124,7 +213,7 @@ const styles = StyleSheet.create({
   },
   balanceCard: {
     marginHorizontal: 16,
-    marginTop: 60,
+    marginTop: 16,
     borderRadius: 24,
     padding: 24,
   },
@@ -169,13 +258,41 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  filterBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginHorizontal: 16,
-    marginTop: 28,
+    marginTop: 24,
     marginBottom: 12,
   },
   txItem: {
@@ -252,5 +369,36 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
+  },
+  filterOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  filterSheet: {
+    width: '75%',
+    maxHeight: 400,
+    borderRadius: 18,
+    overflow: 'hidden',
+    paddingVertical: 8,
+  },
+  filterSheetTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  filterOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  filterOptionText: {
+    fontSize: 15,
   },
 })

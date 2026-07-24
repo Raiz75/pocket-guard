@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import {
-  StyleSheet, Text, View, FlatList, Pressable,
+  StyleSheet, Text, View, Pressable,
   Modal, TextInput, Alert, useColorScheme,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Colors } from '../../constants/Colors'
-import { useApp } from '../../store/AppContext'
-import { TransactionType, Category } from '../../types'
-
-const typeLabel: Record<TransactionType, string> = { inflow: 'Income', outflow: 'Expenses' }
+import { Colors } from '../constants/Colors'
+import { useApp } from '../store/AppContext'
+import { TransactionType, Category } from '../types'
 
 function CategoryCard({ item, colors }: { item: Category; colors: any }) {
   return (
@@ -52,13 +50,9 @@ export default function CategoryScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
-      </View>
-
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-        <Ionicons name="arrow-down" size={12} color={colors.income} /> Income
+        <Ionicons name="arrow-up" size={12} color={colors.income} /> Income
       </Text>
       <View style={styles.grid}>
         {incomeCategories.map((item) => (
@@ -67,7 +61,7 @@ export default function CategoryScreen() {
       </View>
 
       <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginTop: 24 }]}>
-        <Ionicons name="arrow-up" size={12} color={colors.expense} /> Expenses
+        <Ionicons name="arrow-down" size={12} color={colors.expense} /> Expenses
       </Text>
       <View style={styles.grid}>
         {expenseCategories.map((item) => (
@@ -149,23 +143,16 @@ export default function CategoryScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+
+      <View style={{ height: 100 }} />
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    marginTop: 60,
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    paddingTop: 16,
   },
   sectionLabel: {
     fontSize: 12,
