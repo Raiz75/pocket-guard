@@ -3,10 +3,10 @@ import { Transaction, Category } from '../types'
 import { initDatabase } from '../db/database'
 import { getAllTransactions, insertTransaction, updateTransaction, deleteTransaction } from '../db/transactions'
 import { getAllCategories, insertCategory } from '../db/categories'
+import { seedDefaultCategories } from '../db/seed'
 import { syncAll } from '../lib/sync'
 import { subscribeToChanges, unsubscribe } from '../lib/realtime'
 import { useAuth } from './AuthContext'
-import { DEFAULT_CATEGORIES } from '../constants/Categories'
 
 interface AppContextValue {
   transactions: Transaction[]
@@ -31,16 +31,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const loadData = useCallback(async () => {
     await initDatabase()
+    await seedDefaultCategories()
     const [txs, cats] = await Promise.all([getAllTransactions(), getAllCategories()])
     setTransactions(txs)
-    if (cats.length === 0) {
-      for (const cat of DEFAULT_CATEGORIES) {
-        await insertCategory(cat)
-      }
-      setCategories(DEFAULT_CATEGORIES)
-    } else {
-      setCategories(cats)
-    }
+    setCategories(cats)
   }, [])
 
   useEffect(() => {
