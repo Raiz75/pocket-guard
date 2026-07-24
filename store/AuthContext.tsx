@@ -33,10 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string, name: string): Promise<string | null> => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } })
     if (error) return error.message
     if (data.user) {
-      await supabase.from('users').insert({ id: data.user.id, email, name })
+      const { error: insertError } = await supabase.from('users').upsert({ id: data.user.id, email, name }, { onConflict: 'id' })
+      if (insertError) console.error('User insert failed:', insertError.message)
     }
     return null
   }

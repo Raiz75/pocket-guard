@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput, Pressable, useColorScheme, Alert } from 'react-native'
+import { StyleSheet, Text, View, TextInput, Pressable, useColorScheme } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { Colors } from '../constants/Colors'
@@ -11,11 +11,9 @@ export default function Profile() {
   const colors = Colors[theme]
   const { user, isGuest, signOut } = useAuth()
 
-  const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => signOut() },
-    ])
+  const handleSignOut = async () => {
+    await signOut()
+    router.replace('/auth')
   }
 
   return (
