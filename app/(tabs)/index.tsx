@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
-  StyleSheet, Text, View, FlatList, TouchableOpacity,
-  useColorScheme,
+  StyleSheet, Text, View, FlatList, Pressable, useColorScheme,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '../../constants/Colors'
@@ -32,6 +31,7 @@ export default function Home() {
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
         ListHeaderComponent={() => (
           <>
             <View style={[styles.balanceCard, { backgroundColor: colors.tint }]}>
@@ -41,53 +41,69 @@ export default function Home() {
               </Text>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Income</Text>
+                  <Ionicons name="arrow-down" size={14} color="rgba(255,255,255,0.8)" />
                   <Text style={styles.summaryValue}>
                     ₱{monthlyIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
+                  <Text style={styles.summaryLabel}>Income</Text>
                 </View>
+                <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Expenses</Text>
+                  <Ionicons name="arrow-up" size={14} color="rgba(255,255,255,0.8)" />
                   <Text style={styles.summaryValue}>
                     ₱{monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
+                  <Text style={styles.summaryLabel}>Expenses</Text>
                 </View>
               </View>
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
               {monthLabel} Transactions
             </Text>
           </>
         )}
         renderItem={({ item }: { item: Transaction }) => (
-          <View style={[styles.txItem, { borderBottomColor: colors.tabInactive + '40' }]}>
+          <View style={[styles.txItem, { backgroundColor: colors.surface }]}>
             <View style={styles.txLeft}>
-              <View style={[styles.txDot, { backgroundColor: item.type === 'inflow' ? '#16A34A' : '#DC2626' }]} />
-              <View>
+              <View style={[styles.txIcon, { backgroundColor: item.type === 'inflow' ? colors.income + '20' : colors.expense + '20' }]}>
+                <Ionicons
+                  name={item.type === 'inflow' ? 'trending-down' : 'trending-up'}
+                  size={18}
+                  color={item.type === 'inflow' ? colors.income : colors.expense}
+                />
+              </View>
+              <View style={styles.txInfo}>
                 <Text style={[styles.txCategory, { color: colors.text }]}>{item.category}</Text>
-                {item.note ? <Text style={[styles.txNote, { color: colors.tabInactive }]}>{item.note}</Text> : null}
-                <Text style={[styles.txDate, { color: colors.tabInactive }]}>{formatDate(item.date)}</Text>
+                {item.note ? <Text style={[styles.txNote, { color: colors.textSecondary }]}>{item.note}</Text> : null}
+                <Text style={[styles.txDate, { color: colors.textSecondary }]}>{formatDate(item.date)}</Text>
               </View>
             </View>
-            <Text style={[styles.txAmount, { color: item.type === 'inflow' ? '#16A34A' : '#DC2626' }]}>
+            <Text style={[styles.txAmount, { color: item.type === 'inflow' ? colors.income : colors.expense }]}>
               {item.type === 'inflow' ? '+' : '-'}₱{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
           </View>
         )}
         ListEmptyComponent={() => (
           <View style={styles.empty}>
-            <Ionicons name="wallet-outline" size={48} color={colors.tabInactive} />
-            <Text style={[styles.emptyText, { color: colors.tabInactive }]}>No transactions yet</Text>
-            <Text style={[styles.emptySub, { color: colors.tabInactive }]}>Tap + to add your first one</Text>
+            <View style={[styles.emptyIcon, { backgroundColor: colors.border }]}>
+              <Ionicons name="wallet-outline" size={36} color={colors.textSecondary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No transactions yet</Text>
+            <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Tap + to add your first one</Text>
           </View>
         )}
-        contentContainerStyle={styles.list}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)} activeOpacity={0.85}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.fab,
+          { backgroundColor: colors.tint, transform: [{ scale: pressed ? 0.93 : 1 }] },
+        ]}
+        onPress={() => setModalVisible(true)}
+      >
         <Ionicons name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
 
       <AddTransactionModal
         visible={modalVisible}
@@ -107,47 +123,59 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   balanceCard: {
-    margin: 16,
-    borderRadius: 20,
+    marginHorizontal: 16,
+    marginTop: 60,
+    borderRadius: 24,
     padding: 24,
   },
   balanceLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
     fontWeight: '500',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   balanceAmount: {
     color: '#FFF',
-    fontSize: 36,
+    fontSize: 38,
     fontWeight: '800',
     marginTop: 4,
+    letterSpacing: -0.5,
   },
   summaryRow: {
     flexDirection: 'row',
-    marginTop: 20,
-    gap: 24,
+    marginTop: 24,
+    alignItems: 'center',
   },
   summaryItem: {
     flex: 1,
+    gap: 4,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginHorizontal: 8,
   },
   summaryLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 11,
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   summaryValue: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
-    marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginHorizontal: 16,
-    marginTop: 8,
+    marginTop: 28,
     marginBottom: 12,
   },
   txItem: {
@@ -156,7 +184,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    marginHorizontal: 16,
+    marginBottom: 2,
+    borderRadius: 14,
   },
   txLeft: {
     flexDirection: 'row',
@@ -164,10 +194,15 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
   },
-  txDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  txIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  txInfo: {
+    gap: 1,
   },
   txCategory: {
     fontSize: 15,
@@ -175,11 +210,9 @@ const styles = StyleSheet.create({
   },
   txNote: {
     fontSize: 12,
-    marginTop: 1,
   },
   txDate: {
     fontSize: 11,
-    marginTop: 2,
   },
   txAmount: {
     fontSize: 16,
@@ -187,15 +220,23 @@ const styles = StyleSheet.create({
   },
   empty: {
     alignItems: 'center',
-    marginTop: 60,
-    gap: 8,
+    marginTop: 80,
+    gap: 12,
   },
-  emptyText: {
-    fontSize: 16,
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 17,
     fontWeight: '600',
   },
   emptySub: {
-    fontSize: 13,
+    fontSize: 14,
   },
   fab: {
     position: 'absolute',
@@ -204,13 +245,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#0891B2',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
 })

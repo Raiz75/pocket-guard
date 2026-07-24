@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  Modal, View, Text, TextInput, TouchableOpacity, FlatList,
+  Modal, View, Text, TextInput, Pressable, FlatList,
   StyleSheet, useColorScheme, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { Colors } from '../constants/Colors'
@@ -42,28 +42,37 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-          <View style={[styles.handle, { backgroundColor: colors.tabInactive }]} />
+        <Pressable style={styles.backdrop} onPress={onClose} />
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.title, { color: colors.text }]}>New Transaction</Text>
 
-          <View style={styles.segment}>
-            <TouchableOpacity
-              style={[styles.segmentBtn, type === 'inflow' && { backgroundColor: '#16A34A' }]}
+          <View style={[styles.segment, { backgroundColor: colors.background }]}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.segmentBtn,
+                type === 'inflow' && { backgroundColor: colors.income },
+                { transform: [{ scale: pressed ? 0.95 : 1 }] },
+              ]}
               onPress={() => { setType('inflow'); setCategory('') }}
             >
-              <Text style={[styles.segmentText, { color: type === 'inflow' ? '#FFF' : colors.text }]}>Inflow</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.segmentBtn, type === 'outflow' && { backgroundColor: '#DC2626' }]}
+              <Text style={[styles.segmentText, { color: type === 'inflow' ? '#FFF' : colors.textSecondary }]}>Inflow</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.segmentBtn,
+                type === 'outflow' && { backgroundColor: colors.expense },
+                { transform: [{ scale: pressed ? 0.95 : 1 }] },
+              ]}
               onPress={() => { setType('outflow'); setCategory('') }}
             >
-              <Text style={[styles.segmentText, { color: type === 'outflow' ? '#FFF' : colors.text }]}>Outflow</Text>
-            </TouchableOpacity>
+              <Text style={[styles.segmentText, { color: type === 'outflow' ? '#FFF' : colors.textSecondary }]}>Outflow</Text>
+            </Pressable>
           </View>
 
-          <Text style={[styles.label, { color: colors.text }]}>Amount</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Amount</Text>
           <TextInput
-            style={[styles.input, { color: colors.text, borderColor: colors.tabInactive }]}
+            style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
             placeholder="0.00"
             placeholderTextColor={colors.tabInactive}
             keyboardType="decimal-pad"
@@ -71,53 +80,61 @@ export default function AddTransactionModal({ visible, onClose, onSave, categori
             onChangeText={setAmount}
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Category</Text>
-          <TouchableOpacity
-            style={[styles.input, styles.picker, { borderColor: colors.tabInactive }]}
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
+          <Pressable
+            style={[styles.input, styles.picker, { backgroundColor: colors.background, borderColor: colors.border }]}
             onPress={() => setShowDropdown(true)}
           >
-            <Text style={[{ color: category ? colors.text : colors.tabInactive }]}>
+            <Text style={{ color: category ? colors.text : colors.tabInactive, fontSize: 16 }}>
               {category || 'Select category'}
             </Text>
-            <Text style={{ color: colors.tabInactive }}>▼</Text>
-          </TouchableOpacity>
+            <Text style={{ color: colors.tabInactive, fontSize: 12 }}>▼</Text>
+          </Pressable>
 
-          <Text style={[styles.label, { color: colors.text }]}>Note</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Note</Text>
           <TextInput
-            style={[styles.input, { color: colors.text, borderColor: colors.tabInactive }]}
+            style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
             placeholder="Optional note"
             placeholderTextColor={colors.tabInactive}
             value={note}
             onChangeText={setNote}
           />
 
-          <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: canSave ? colors.tint : colors.tabInactive }]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.saveBtn,
+              { backgroundColor: canSave ? colors.tint : colors.border, opacity: canSave ? 1 : 0.7 },
+              { transform: [{ scale: pressed && canSave ? 0.97 : 1 }] },
+            ]}
             onPress={handleSave}
             disabled={!canSave}
           >
-            <Text style={styles.saveText}>Save</Text>
-          </TouchableOpacity>
+            <Text style={[styles.saveText, { color: canSave ? '#FFF' : colors.textSecondary }]}>Add Transaction</Text>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
 
       <Modal visible={showDropdown} transparent animationType="fade">
-        <TouchableOpacity style={styles.dropOverlay} onPress={() => setShowDropdown(false)} activeOpacity={1}>
-          <View style={[styles.dropList, { backgroundColor: colors.background }]}>
+        <Pressable style={styles.dropOverlay} onPress={() => setShowDropdown(false)}>
+          <View style={[styles.dropList, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.dropTitle, { color: colors.text }]}>Select {type === 'inflow' ? 'Income' : 'Expense'} Category</Text>
             <FlatList
               data={filteredCategories}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.dropItem}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.dropItem,
+                    { backgroundColor: pressed ? colors.background : 'transparent' },
+                  ]}
                   onPress={() => { setCategory(item.name); setShowDropdown(false) }}
                 >
                   <Text style={[styles.dropItemText, { color: colors.text }]}>{item.name}</Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
             />
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Modal>
     </Modal>
   )
@@ -127,11 +144,13 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  backdrop: {
+    flex: 1,
   },
   sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: 40,
   },
@@ -140,42 +159,43 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   segment: {
     flexDirection: 'row',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 20,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+    gap: 4,
   },
   segmentBtn: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 10,
   },
   segmentText: {
     fontSize: 15,
     fontWeight: '600',
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   picker: {
     flexDirection: 'row',
@@ -183,13 +203,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveBtn: {
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   saveText: {
-    color: '#FFF',
     fontSize: 17,
     fontWeight: '700',
   },
@@ -200,10 +219,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   dropList: {
-    width: '75%',
-    maxHeight: 300,
-    borderRadius: 14,
+    width: '80%',
+    maxHeight: 360,
+    borderRadius: 16,
     overflow: 'hidden',
+  },
+  dropTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   dropItem: {
     paddingVertical: 14,

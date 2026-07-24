@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
-  StyleSheet, Text, View, FlatList, TouchableOpacity,
+  StyleSheet, Text, View, FlatList, Pressable,
   Modal, TextInput, Alert, useColorScheme,
+  KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '../../constants/Colors'
@@ -9,6 +10,21 @@ import { useApp } from '../../store/AppContext'
 import { TransactionType, Category } from '../../types'
 
 const typeLabel: Record<TransactionType, string> = { inflow: 'Income', outflow: 'Expenses' }
+
+function CategoryCard({ item, colors }: { item: Category; colors: any }) {
+  return (
+    <View style={[styles.catCard, { backgroundColor: colors.surface }]}>
+      <View style={[styles.catDot, { backgroundColor: item.type === 'inflow' ? colors.income + '20' : colors.expense + '20' }]}>
+        <Ionicons
+          name={item.type === 'inflow' ? 'arrow-down' : 'arrow-up'}
+          size={16}
+          color={item.type === 'inflow' ? colors.income : colors.expense}
+        />
+      </View>
+      <Text style={[styles.catName, { color: colors.text }]}>{item.name}</Text>
+    </View>
+  )
+}
 
 export default function CategoryScreen() {
   const colorScheme = useColorScheme()
@@ -27,7 +43,7 @@ export default function CategoryScreen() {
     if (!trimmed) return
     const exists = categories.some((c) => c.name.toLowerCase() === trimmed.toLowerCase() && c.type === newType)
     if (exists) {
-      Alert.alert('Duplicate', 'A category with this name already exists in the selected type.')
+      Alert.alert('Duplicate', 'A category with this name already exists.')
       return
     }
     addCategory({ id: Date.now().toString(), name: trimmed, type: newType })
@@ -35,68 +51,72 @@ export default function CategoryScreen() {
     setShowModal(false)
   }
 
-  const renderCategory = ({ item }: { item: Category }) => (
-    <View style={[styles.catItem, { borderBottomColor: colors.tabInactive + '30' }]}>
-      <View style={[styles.catDot, { backgroundColor: item.type === 'inflow' ? '#16A34A' : '#DC2626' }]} />
-      <Text style={[styles.catName, { color: colors.text }]}>{item.name}</Text>
-    </View>
-  )
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        ListHeaderComponent={() => (
-          <>
-            <Text style={[styles.sectionHeader, { color: colors.text }]}>
-              <Ionicons name="arrow-down" size={14} color="#16A34A" /> Income
-            </Text>
-          </>
-        )}
-        data={incomeCategories}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCategory}
-        ListFooterComponent={() => (
-          <>
-            <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 24 }]}>
-              <Ionicons name="arrow-up" size={14} color="#DC2626" /> Expenses
-            </Text>
-          </>
-        )}
-      />
-      <FlatList
-        data={expenseCategories}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCategory}
-        scrollEnabled={false}
-      />
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
+      </View>
 
-      <TouchableOpacity style={styles.fab} onPress={() => setShowModal(true)} activeOpacity={0.85}>
+      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+        <Ionicons name="arrow-down" size={12} color={colors.income} /> Income
+      </Text>
+      <View style={styles.grid}>
+        {incomeCategories.map((item) => (
+          <CategoryCard key={item.id} item={item} colors={colors} />
+        ))}
+      </View>
+
+      <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginTop: 24 }]}>
+        <Ionicons name="arrow-up" size={12} color={colors.expense} /> Expenses
+      </Text>
+      <View style={styles.grid}>
+        {expenseCategories.map((item) => (
+          <CategoryCard key={item.id} item={item} colors={colors} />
+        ))}
+      </View>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.fab,
+          { backgroundColor: colors.tint, transform: [{ scale: pressed ? 0.93 : 1 }] },
+        ]}
+        onPress={() => setShowModal(true)}
+      >
         <Ionicons name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
 
       <Modal visible={showModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: colors.background }]}>
-            <View style={[styles.handle, { backgroundColor: colors.tabInactive }]} />
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+          <Pressable style={styles.backdrop} onPress={() => setShowModal(false)} />
+          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Add Category</Text>
 
-            <View style={styles.segment}>
-              <TouchableOpacity
-                style={[styles.segmentBtn, newType === 'inflow' && { backgroundColor: '#16A34A' }]}
+            <View style={[styles.segment, { backgroundColor: colors.background }]}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.segmentBtn,
+                  newType === 'inflow' && { backgroundColor: colors.income },
+                  { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                ]}
                 onPress={() => setNewType('inflow')}
               >
-                <Text style={[styles.segmentText, { color: newType === 'inflow' ? '#FFF' : colors.text }]}>Income</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.segmentBtn, newType === 'outflow' && { backgroundColor: '#DC2626' }]}
+                <Text style={[styles.segmentText, { color: newType === 'inflow' ? '#FFF' : colors.textSecondary }]}>Income</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.segmentBtn,
+                  newType === 'outflow' && { backgroundColor: colors.expense },
+                  { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                ]}
                 onPress={() => setNewType('outflow')}
               >
-                <Text style={[styles.segmentText, { color: newType === 'outflow' ? '#FFF' : colors.text }]}>Expense</Text>
-              </TouchableOpacity>
+                <Text style={[styles.segmentText, { color: newType === 'outflow' ? '#FFF' : colors.textSecondary }]}>Expense</Text>
+              </Pressable>
             </View>
 
             <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.tabInactive }]}
+              style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
               placeholder="Category name"
               placeholderTextColor={colors.tabInactive}
               value={newName}
@@ -105,19 +125,29 @@ export default function CategoryScreen() {
             />
 
             <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.tabInactive + '40' }]} onPress={() => setShowModal(false)}>
-                <Text style={[styles.actionText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: newName.trim() ? colors.tint : colors.tabInactive }]}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  { backgroundColor: colors.border, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                ]}
+                onPress={() => setShowModal(false)}
+              >
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  { backgroundColor: newName.trim() ? colors.tint : colors.border, opacity: newName.trim() ? 1 : 0.6 },
+                  { transform: [{ scale: pressed && newName.trim() ? 0.97 : 1 }] },
+                ]}
                 onPress={handleAdd}
                 disabled={!newName.trim()}
               >
-                <Text style={styles.actionText}>Add</Text>
-              </TouchableOpacity>
+                <Text style={[styles.actionText, { color: '#FFF' }]}>Add</Text>
+              </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   )
@@ -127,29 +157,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  sectionHeader: {
-    fontSize: 15,
-    fontWeight: '700',
+  header: {
+    marginTop: 60,
     marginHorizontal: 16,
-    marginTop: 16,
     marginBottom: 8,
   },
-  catItem: {
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  catCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
+    gap: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    borderRadius: 14,
+    minWidth: 120,
   },
   catDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   catName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
@@ -158,23 +208,24 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#0891B2',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  modalSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  backdrop: {
+    flex: 1,
+  },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: 40,
   },
@@ -183,24 +234,25 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   segment: {
     flexDirection: 'row',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 20,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+    gap: 4,
   },
   segmentBtn: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 10,
   },
   segmentText: {
     fontSize: 15,
@@ -208,10 +260,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   modalActions: {
     flexDirection: 'row',
@@ -219,12 +271,11 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },
   actionText: {
-    color: '#FFF',
     fontSize: 16,
     fontWeight: '700',
   },
