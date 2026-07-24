@@ -40,3 +40,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# project tooling
+dist-test/
+.superpowers/
